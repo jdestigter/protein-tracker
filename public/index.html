@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1a1714">
+  <link rel="manifest" href="/manifest.json">
+  <title>Protein Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1714; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+    input:focus, textarea:focus { outline: none; }
+    ::selection { background: rgba(232,148,58,0.15); }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #2e2a23; border-radius: 4px; }
+    @keyframes ping { 75%, 100% { transform: scale(1.6); opacity: 0; } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes growUp { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+    const DAILY_GOAL_DEFAULT = 160;
+    const T = {
+      bg:"#1a1714", surface:"#242019", surfaceLight:"#2e2a23",
+      accent:"#e8943a", accentDim:"rgba(232,148,58,0.15)", accentGlow:"rgba(232,148,58,0.3)",
+      text:"#f0ece6", textDim:"#9a9389", success:"#7bc67e", error:"#e85a5a",
+    };
+
+    const SK = { history:"protein-history", settings:"protein-settings" };
+    function loadS(k) { try { const d=localStorage.getItem(k); return d?JSON.parse(d):null; } catch{return null;} }
+    function saveS(k,d) { try { localStorage.setItem(k,JSON.stringify(d)); } catch(e){} }
+    function dateKey(d=new Date()) { return d.toISOString().split("T")[0]; }
+    function daysAgo(n) { const d=new Date(); d.setDate(d.getDate()-n); return dateKey(d); }
+
+    async function parseFood(text) {
+      const r = await fetch("/api/parse-food", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({text}) });
+      if (!r.ok) throw new Error("API request failed");
+      return r.json();
+    }
+
+    // ---- Custom Bar Chart ----
+    function BarChart({ data, goal }) {
+      const [tooltip, setTooltip] = useState(null);
+      const maxVal = Math.max(goal * 1.3, ...data.map(d => d.actual)) || goal;
+      const barWidth = Math.min(32, Math.floor((380 - data.length * 4) / data.length));
+      const chartH = 200, padL = 36, padB = 28, padT = 10;
+      const innerW = data.length * (barWidth + 6);
+      const totalW = innerW + padL + 10;
+      const goalY = padT + chartH - (goal / maxVal) * chartH;
+
+      return (
+        <div style={{ padding: "16px 24px 0", position: "relative" }}>
+          <svg width="100%" viewBox={`0 0 ${totalW} ${chartH + padT + padB}`} style={{ overflow: "visible" }}>
+            {/* Y axis labels */}
+            {[0, 0.25, 0.5, 0.75, 1].map(pct => {
+              const y = padT + chartH - pct * chartH;
+              const val = Math.round(pct * maxVal);
+              return (
+                <g key={pct}>
+                  <line x1={padL} x2={totalW} y1={y} y2={y} stroke={T.surfaceLight} strokeDasharray="3 3" />
+                  <text x={padL - 4} y={y + 4} textAnchor="end" fill={T.textDim} fontSize="9" fontFamily="DM Sans">{val}</text>
+                </g>
+              );
+            })}
+            {/* Goal line */}
+            <line x1={padL} x2={totalW} y1={goalY} y2={goalY} stroke={T.accent} strokeDasharray="6 4" strokeWidth="1.5" />
+            <text x={totalW + 2} y={goalY + 3} fill={T.accent} fontSize="9" fontFamily="DM Sans">Goal</text>
+            {/* Bars */}
+            {data.map((d, i) => {
+              const barH = d.hasData ? Math.max(2, (d.actual / maxVal) * chartH) : 4;
+              const x = padL + i * (barWidth + 6) + 3;
+              const y = padT + chartH - barH;
+              const fill = !d.hasData ? T.surfaceLight : d.actual >= d.goal ? T.success : T.accent;
+              const opacity = d.hasData ? 1 : 0.3;
+              return (
+                <g key={i}
+                  onMouseEnter={() => setTooltip({ x: x + barWidth/2, y: y - 8, ...d })}
+                  onMouseLeave={() => setTooltip(null)}
+                  onTouchStart={() => setTooltip(tp => tp?.label === d.label ? null : { x: x + barWidth/2, y: y - 8, ...d })}
+                  style={{ cursor: "pointer" }}
+                >
+                  <rect x={x} y={y} width={barWidth} height={barH} rx={4} fill={fill} fillOpacity={opacity}
+                    style={{ transformOrigin: `${x + barWidth/2}px ${padT + chartH}px`, animation: `growUp 0.5s cubic-bezier(0.4,0,0.2,1) ${i * 0.03}s both` }} />
+                  <text x={x + barWidth/2} y={padT + chartH + 14} textAnchor="middle" fill={T.textDim} fontSize="8" fontFamily="DM Sans">{d.shortLabel}</text>
+                </g>
+              );
+            })}
+          </svg>
+          {tooltip && (
+            <div style={{
+              position: "absolute", left: `calc(${(tooltip.x / totalW) * 100}% - 60px)`, top: Math.max(0, tooltip.y - 20),
+              background: T.surface, border: `1px solid ${T.surfaceLight}`, borderRadius: 10, padding: "8px 12px",
+              pointerEvents: "none", zIndex: 10, minWidth: 120,
+            }}>
+              <div style={{ fontSize: 11, color: T.textDim, marginBottom: 3 }}>{tooltip.label}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.accent }}>{tooltip.actual}g</div>
+              <div style={{ fontSize: 11, color: T.textDim }}>{tooltip.goal}g goal</div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // ---- Small Components ----
+    function CircularProgress({ current, goal, size=220 }) {
+      const sw=10, r=(size-sw)/2, c=2*Math.PI*r;
+      const offset=c-Math.min(current/goal,1)*c;
+      const over=current>goal;
+      return (
+        <div style={{position:"relative",width:size,height:size,margin:"0 auto"}}>
+          <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={T.surfaceLight} strokeWidth={sw}/>
+            <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={over?T.success:T.accent} strokeWidth={sw} strokeDasharray={c} strokeDashoffset={offset} strokeLinecap="round" style={{transition:"stroke-dashoffset 0.8s cubic-bezier(0.4,0,0.2,1), stroke 0.3s"}}/>
+          </svg>
+          <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+            <span style={{fontSize:48,fontWeight:700,color:T.text,lineHeight:1}}>{current}</span>
+            <span style={{fontSize:13,color:T.textDim,marginTop:4,letterSpacing:1.5,textTransform:"uppercase"}}>of {goal}g</span>
+          </div>
+        </div>
+      );
+    }
+
+    function FoodItem({item,onDelete,animDelay=0}) {
+      const [vis,setVis]=useState(false);
+      useEffect(()=>{const t=setTimeout(()=>setVis(true),animDelay);return()=>clearTimeout(t);},[]);
+      return (
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 16px",background:T.surface,borderRadius:14,opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(10px)",transition:"all 0.4s cubic-bezier(0.4,0,0.2,1)",border:`1px solid ${T.surfaceLight}`}}>
+          <div style={{flex:1}}><div style={{fontSize:15,fontWeight:600,color:T.text,textTransform:"capitalize"}}>{item.name}</div><div style={{fontSize:12,color:T.textDim,marginTop:2}}>{item.portion}</div></div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <span style={{fontSize:18,fontWeight:700,color:T.accent}}>{item.protein}g</span>
+            <button onClick={onDelete} style={{background:"none",border:"none",color:T.textDim,cursor:"pointer",fontSize:18,padding:"2px 6px",borderRadius:6,lineHeight:1}} onMouseEnter={e=>e.target.style.color=T.error} onMouseLeave={e=>e.target.style.color=T.textDim}>×</button>
+          </div>
+        </div>
+      );
+    }
+
+    function ClarificationCard({item,onConfirm,onDismiss}) {
+      const [qty,setQty]=useState("");
+      const [vis,setVis]=useState(false);
+      useEffect(()=>{const t=setTimeout(()=>setVis(true),50);return()=>clearTimeout(t);},[]);
+      const preview=qty&&!isNaN(parseFloat(qty))?Math.round(parseFloat(qty)*(item.protein_per_unit||0)):null;
+      return (
+        <div style={{padding:"14px 16px",background:T.accentDim,borderRadius:14,border:`1px solid ${T.accentGlow}`,opacity:vis?1:0,transform:vis?"translateY(0)":"translateY(10px)",transition:"all 0.4s cubic-bezier(0.4,0,0.2,1)"}}>
+          <div style={{fontSize:14,fontWeight:600,color:T.text,textTransform:"capitalize",marginBottom:4}}>{item.name}</div>
+          <div style={{fontSize:12,color:T.textDim,marginBottom:12}}>How many {item.unit||"serving"}s? (suggested: {item.default_portion})</div>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+            <input type="number" value={qty} onChange={e=>setQty(e.target.value)} onKeyDown={e=>e.key==="Enter"&&qty&&onConfirm(qty)} placeholder="#" style={{width:64,background:T.bg,border:`1px solid ${T.surfaceLight}`,color:T.text,fontSize:16,padding:"8px 12px",borderRadius:10,textAlign:"center"}} onFocus={e=>e.target.style.borderColor=T.accent} onBlur={e=>e.target.style.borderColor=T.surfaceLight} autoFocus/>
+            <span style={{fontSize:13,color:T.textDim}}>{item.unit||"serving"}s</span>
+            {preview!==null&&<span style={{fontSize:14,fontWeight:700,color:T.accent,marginLeft:"auto"}}>{preview}g</span>}
+            <button onClick={()=>onConfirm(qty)} disabled={!qty} style={{background:T.accent,color:T.bg,border:"none",padding:"8px 14px",borderRadius:10,fontSize:13,fontWeight:600,cursor:qty?"pointer":"not-allowed",opacity:qty?1:0.4,marginLeft:preview!==null?0:"auto"}}>Add</button>
+            <button onClick={onDismiss} style={{background:"none",border:`1px solid ${T.surfaceLight}`,color:T.textDim,padding:"8px 10px",borderRadius:10,fontSize:13,cursor:"pointer"}}>✕</button>
+          </div>
+        </div>
+      );
+    }
+
+    function MicButton({isListening,onClick,disabled}) {
+      return (
+        <button onClick={onClick} disabled={disabled} style={{width:72,height:72,borderRadius:"50%",background:isListening?"radial-gradient(circle,#e85a5a 0%,#c44)":"radial-gradient(circle,#e8943a 0%,#c77025)",border:"none",cursor:disabled?"not-allowed":"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:isListening?"0 0 0 8px rgba(232,90,90,0.2), 0 0 30px rgba(232,90,90,0.3)":`0 0 0 6px ${T.accentDim}, 0 8px 24px rgba(0,0,0,0.4)`,transition:"all 0.3s cubic-bezier(0.4,0,0.2,1)",transform:isListening?"scale(1.08)":"scale(1)",opacity:disabled?0.5:1,position:"relative",overflow:"hidden"}}>
+          {isListening&&<div style={{position:"absolute",inset:0,borderRadius:"50%",border:"2px solid rgba(255,255,255,0.3)",animation:"ping 1.5s cubic-bezier(0,0,0.2,1) infinite"}}/>}
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </button>
+      );
+    }
+
+    // ---- History ----
+    function HistoryView({history,goal,onClose}) {
+      const [view,setView]=useState("daily");
+
+      const buildDaily=()=>{const d=[];for(let i=13;i>=0;i--){const k=daysAgo(i),dt=new Date(k+"T12:00:00");d.push({label:dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}),shortLabel:dt.toLocaleDateString("en-US",{month:"numeric",day:"numeric"}),actual:history[k]?.total||0,goal:history[k]?.goal||goal,hasData:!!history[k]});}return d;};
+      const buildWeekly=()=>{const w=[],now=new Date();for(let i=7;i>=0;i--){let tp=0,tg=0,dc=0;const ws=new Date(now);ws.setDate(now.getDate()-(i*7+6));const we=new Date(now);we.setDate(now.getDate()-i*7);for(let d=0;d<7;d++){const day=new Date(ws);day.setDate(ws.getDate()+d);const k=dateKey(day);if(history[k]){tp+=history[k].total;tg+=history[k].goal||goal;dc++;}}w.push({label:`${ws.toLocaleDateString("en-US",{month:"short",day:"numeric"})} – ${we.toLocaleDateString("en-US",{month:"short",day:"numeric"})}`,shortLabel:ws.toLocaleDateString("en-US",{month:"short",day:"numeric"}),actual:dc>0?Math.round(tp/dc):0,goal:dc>0?Math.round(tg/dc):goal,hasData:dc>0});}return w;};
+      const buildMonthly=()=>{const m=[],now=new Date();for(let i=5;i>=0;i--){const md=new Date(now.getFullYear(),now.getMonth()-i,1),mk=`${md.getFullYear()}-${String(md.getMonth()+1).padStart(2,"0")}`;let tp=0,tg=0,dc=0;Object.keys(history).forEach(k=>{if(k.startsWith(mk)){tp+=history[k].total;tg+=history[k].goal||goal;dc++;}});m.push({label:md.toLocaleDateString("en-US",{month:"long",year:"numeric"}),shortLabel:md.toLocaleDateString("en-US",{month:"short"}),actual:dc>0?Math.round(tp/dc):0,goal:dc>0?Math.round(tg/dc):goal,hasData:dc>0});}return m;};
+
+      const data=view==="daily"?buildDaily():view==="weekly"?buildWeekly():buildMonthly();
+
+      let streak=0;for(let i=0;i<=365;i++){const k=daysAgo(i);if(history[k]&&history[k].total>=(history[k].goal||goal))streak++;else break;}
+      const dk=Object.keys(history).filter(k=>history[k].total>0);
+      const avg=dk.length>0?Math.round(dk.reduce((s,k)=>s+history[k].total,0)/dk.length):0;
+      const hit=dk.filter(k=>history[k].total>=(history[k].goal||goal)).length;
+
+      return (
+        <div style={{minHeight:"100vh",background:T.bg,color:T.text,maxWidth:430,margin:"0 auto",paddingBottom:40}}>
+          <div style={{padding:"20px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <h2 style={{fontSize:20,fontWeight:700}}>History</h2>
+            <button onClick={onClose} style={{background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.textDim,fontSize:12,padding:"6px 14px",borderRadius:8,cursor:"pointer"}}>Back</button>
+          </div>
+          <div style={{display:"flex",gap:4,background:T.surface,borderRadius:12,margin:"16px 24px 0",padding:4}}>
+            {["daily","weekly","monthly"].map(v=><button key={v} onClick={()=>setView(v)} style={{flex:1,padding:10,border:"none",borderRadius:10,cursor:"pointer",background:view===v?T.accent:"transparent",color:view===v?T.bg:T.textDim,fontSize:13,fontWeight:600,textTransform:"capitalize",transition:"all 0.2s"}}>{v}</button>)}
+          </div>
+          <BarChart data={data} goal={goal} />
+          <div style={{padding:"16px 24px 0",display:"flex",gap:10}}>
+            {[{l:"Avg Daily",v:`${avg}g`},{l:"Goal Hit",v:`${hit}d`},{l:"Streak",v:`${streak}d`}].map(s=>(
+              <div key={s.l} style={{flex:1,background:T.surface,borderRadius:14,border:`1px solid ${T.surfaceLight}`,padding:"14px 12px",textAlign:"center"}}>
+                <div style={{fontSize:20,fontWeight:700,color:T.accent}}>{s.v}</div>
+                <div style={{fontSize:11,color:T.textDim,marginTop:2,textTransform:"uppercase",letterSpacing:1}}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:"16px 24px 0",display:"flex",gap:16,justifyContent:"center"}}>
+            {[{c:T.success,l:"Hit goal"},{c:T.accent,l:"Under goal"},{c:T.surfaceLight,l:"No data"}].map(x=>(
+              <div key={x.l} style={{display:"flex",alignItems:"center",gap:6}}><div style={{width:10,height:10,borderRadius:3,background:x.c}}/><span style={{fontSize:11,color:T.textDim}}>{x.l}</span></div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // ---- Onboarding ----
+    function OnboardingScreen({onComplete}) {
+      const [step,setStep]=useState(0);
+      const [weight,setWeight]=useState("");
+      const [weightUnit,setWeightUnit]=useState("lbs");
+      const [activityLevel,setActivityLevel]=useState(null);
+      const [fitnessGoal,setFitnessGoal]=useState(null);
+      const [recommended,setRecommended]=useState(null);
+      const [customGoal,setCustomGoal]=useState("");
+      const [manualGoal,setManualGoal]=useState("");
+
+      const actOpts=[{id:"sedentary",label:"Sedentary",desc:"Desk job, little exercise",m:0.7},{id:"moderate",label:"Moderate",desc:"Exercise 3–4x/week",m:0.85},{id:"active",label:"Active",desc:"Exercise 5–6x/week",m:1.0},{id:"athlete",label:"Athlete",desc:"Intense daily training",m:1.2}];
+      const goalOpts=[{id:"lose",label:"Lose Fat",desc:"Preserve muscle while cutting",m:1.0},{id:"maintain",label:"Maintain",desc:"Stay where you are",m:0.8},{id:"build",label:"Build Muscle",desc:"Maximize growth",m:1.1}];
+
+      const calc=()=>{let lbs=parseFloat(weight);if(weightUnit==="kg")lbs*=2.205;return Math.round(lbs*0.8*(actOpts.find(x=>x.id===activityLevel)?.m||1)*(goalOpts.find(x=>x.id===fitnessGoal)?.m||1));};
+      const doCalc=()=>{const r=calc();setRecommended(r);setCustomGoal(String(r));setStep(3);};
+
+      const optBtn=(sel)=>({padding:"14px 16px",background:sel?T.accentDim:T.surface,border:`1px solid ${sel?T.accent:T.surfaceLight}`,borderRadius:14,cursor:"pointer",textAlign:"left",width:"100%",transition:"all 0.2s"});
+      const backBtn={padding:"16px 24px",background:T.surface,border:`1px solid ${T.surfaceLight}`,borderRadius:14,color:T.textDim,fontSize:14,cursor:"pointer"};
+      const nextBtn=(ok)=>({flex:1,padding:16,background:T.accent,color:T.bg,border:"none",borderRadius:14,fontSize:16,fontWeight:600,cursor:ok?"pointer":"not-allowed",opacity:ok?1:0.4});
+
+      return (
+        <div style={{minHeight:"100vh",background:T.bg,color:T.text,maxWidth:430,margin:"0 auto",display:"flex",flexDirection:"column"}}>
+          <div style={{padding:"48px 28px 28px",flex:1,display:"flex",flexDirection:"column"}}>
+            <div style={{display:"flex",gap:8,marginBottom:40,justifyContent:"center"}}>
+              {[0,1,2,3].map(i=><div key={i} style={{width:step===i?24:8,height:8,borderRadius:4,background:(typeof step==="number"&&step>=i)?T.accent:T.surfaceLight,transition:"all 0.3s"}}/>)}
+            </div>
+
+            {step===0&&(
+              <div style={{animation:"fadeIn 0.4s ease"}}>
+                <h2 style={{fontSize:26,fontWeight:700,marginBottom:8,background:`linear-gradient(135deg,${T.text},${T.accent})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Let's set your protein goal</h2>
+                <p style={{fontSize:14,color:T.textDim,marginBottom:32,lineHeight:1.5}}>We'll calculate a personalized daily target based on your body and goals.</p>
+                <label style={{fontSize:13,color:T.textDim,display:"block",marginBottom:10}}>What's your current weight?</label>
+                <div style={{display:"flex",gap:10,marginBottom:24}}>
+                  <input type="number" value={weight} onChange={e=>setWeight(e.target.value)} placeholder="Enter weight" style={{flex:1,background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.text,fontSize:18,padding:"14px 16px",borderRadius:12}} onFocus={e=>e.target.style.borderColor=T.accent} onBlur={e=>e.target.style.borderColor=T.surfaceLight} autoFocus/>
+                  <div style={{display:"flex",background:T.surface,borderRadius:12,border:`1px solid ${T.surfaceLight}`,overflow:"hidden"}}>
+                    {["lbs","kg"].map(u=><button key={u} onClick={()=>setWeightUnit(u)} style={{padding:"14px 16px",border:"none",cursor:"pointer",background:weightUnit===u?T.accent:"transparent",color:weightUnit===u?T.bg:T.textDim,fontSize:14,fontWeight:600}}>{u}</button>)}
+                  </div>
+                </div>
+                <button onClick={()=>setStep(1)} disabled={!weight||parseFloat(weight)<=0} style={{width:"100%",...nextBtn(weight&&parseFloat(weight)>0)}}>Continue</button>
+                <div style={{display:"flex",alignItems:"center",gap:12,margin:"20px 0 0"}}><div style={{flex:1,height:1,background:T.surfaceLight}}/><span style={{fontSize:12,color:T.textDim}}>or</span><div style={{flex:1,height:1,background:T.surfaceLight}}/></div>
+                <button onClick={()=>setStep("manual")} style={{width:"100%",padding:14,background:"transparent",color:T.textDim,border:`1px solid ${T.surfaceLight}`,borderRadius:14,fontSize:14,fontWeight:500,cursor:"pointer",marginTop:16}}>I know my goal — set it manually</button>
+              </div>
+            )}
+
+            {step==="manual"&&(
+              <div style={{animation:"fadeIn 0.4s ease"}}>
+                <h2 style={{fontSize:24,fontWeight:700,marginBottom:8,color:T.text}}>Set your daily goal</h2>
+                <p style={{fontSize:14,color:T.textDim,marginBottom:32,lineHeight:1.5}}>Enter your daily protein target in grams.</p>
+                <input type="number" value={manualGoal} onChange={e=>setManualGoal(e.target.value)} onKeyDown={e=>e.key==="Enter"&&manualGoal&&parseInt(manualGoal)>0&&onComplete(parseInt(manualGoal))} placeholder="e.g. 160" style={{width:"100%",background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.text,fontSize:28,padding:16,borderRadius:12,textAlign:"center",fontWeight:700,marginBottom:24}} onFocus={e=>e.target.style.borderColor=T.accent} onBlur={e=>e.target.style.borderColor=T.surfaceLight} autoFocus/>
+                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(0)} style={backBtn}>Back</button><button onClick={()=>onComplete(parseInt(manualGoal))} disabled={!manualGoal||parseInt(manualGoal)<=0} style={nextBtn(manualGoal&&parseInt(manualGoal)>0)}>Start Tracking</button></div>
+              </div>
+            )}
+
+            {step===1&&(
+              <div style={{animation:"fadeIn 0.4s ease"}}>
+                <h2 style={{fontSize:24,fontWeight:700,marginBottom:8,color:T.text}}>Activity level</h2>
+                <p style={{fontSize:14,color:T.textDim,marginBottom:24,lineHeight:1.5}}>How active are you on a typical week?</p>
+                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+                  {actOpts.map(o=><button key={o.id} onClick={()=>setActivityLevel(o.id)} style={optBtn(activityLevel===o.id)}><div style={{fontSize:15,fontWeight:600,color:T.text}}>{o.label}</div><div style={{fontSize:12,color:T.textDim,marginTop:2}}>{o.desc}</div></button>)}
+                </div>
+                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(0)} style={backBtn}>Back</button><button onClick={()=>setStep(2)} disabled={!activityLevel} style={nextBtn(!!activityLevel)}>Continue</button></div>
+              </div>
+            )}
+
+            {step===2&&(
+              <div style={{animation:"fadeIn 0.4s ease"}}>
+                <h2 style={{fontSize:24,fontWeight:700,marginBottom:8,color:T.text}}>What's your goal?</h2>
+                <p style={{fontSize:14,color:T.textDim,marginBottom:24,lineHeight:1.5}}>This affects how much protein you should aim for.</p>
+                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+                  {goalOpts.map(o=><button key={o.id} onClick={()=>setFitnessGoal(o.id)} style={optBtn(fitnessGoal===o.id)}><div style={{fontSize:15,fontWeight:600,color:T.text}}>{o.label}</div><div style={{fontSize:12,color:T.textDim,marginTop:2}}>{o.desc}</div></button>)}
+                </div>
+                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(1)} style={backBtn}>Back</button><button onClick={doCalc} disabled={!fitnessGoal} style={nextBtn(!!fitnessGoal)}>Calculate</button></div>
+              </div>
+            )}
+
+            {step===3&&(
+              <div style={{animation:"fadeIn 0.4s ease",textAlign:"center"}}>
+                <div style={{fontSize:13,color:T.textDim,textTransform:"uppercase",letterSpacing:1.5,marginBottom:16}}>Your recommended daily protein</div>
+                <div style={{fontSize:72,fontWeight:700,color:T.accent,lineHeight:1,marginBottom:4}}>{recommended}g</div>
+                <div style={{fontSize:13,color:T.textDim,marginBottom:32}}>Based on {weight} {weightUnit}, {actOpts.find(a=>a.id===activityLevel)?.label.toLowerCase()} activity, {goalOpts.find(g=>g.id===fitnessGoal)?.label.toLowerCase()}</div>
+                <label style={{fontSize:13,color:T.textDim,display:"block",marginBottom:10,textAlign:"left"}}>Adjust if you'd like:</label>
+                <input type="number" value={customGoal} onChange={e=>setCustomGoal(e.target.value)} style={{width:"100%",background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.text,fontSize:22,padding:"14px 16px",borderRadius:12,textAlign:"center",fontWeight:600,marginBottom:24}} onFocus={e=>e.target.style.borderColor=T.accent} onBlur={e=>e.target.style.borderColor=T.surfaceLight}/>
+                <div style={{display:"flex",gap:10}}><button onClick={()=>setStep(2)} style={backBtn}>Back</button><button onClick={()=>onComplete(parseInt(customGoal)||recommended)} style={nextBtn(true)}>Start Tracking</button></div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ---- Main App ----
+    function App() {
+      const [onboarded,setOnboarded]=useState(false);
+      const [dailyGoal,setDailyGoal]=useState(DAILY_GOAL_DEFAULT);
+      const [entries,setEntries]=useState([]);
+      const [history,setHistory]=useState({});
+      const [showHistory,setShowHistory]=useState(false);
+      const [isListening,setIsListening]=useState(false);
+      const [isProcessing,setIsProcessing]=useState(false);
+      const [transcript,setTranscript]=useState("");
+      const [error,setError]=useState("");
+      const [showSettings,setShowSettings]=useState(false);
+      const [tempGoal,setTempGoal]=useState(DAILY_GOAL_DEFAULT);
+      const [textInput,setTextInput]=useState("");
+      const [pendingItems,setPendingItems]=useState([]);
+      const [loaded,setLoaded]=useState(false);
+      const recRef=useRef(null);
+
+      useEffect(()=>{
+        const s=loadS(SK.settings),h=loadS(SK.history);
+        if(s){setDailyGoal(s.dailyGoal||DAILY_GOAL_DEFAULT);setTempGoal(s.dailyGoal||DAILY_GOAL_DEFAULT);setOnboarded(true);}
+        if(h){setHistory(h);const tk=dateKey();if(h[tk]?.entries)setEntries(h[tk].entries);}
+        setLoaded(true);
+      },[]);
+
+      useEffect(()=>{
+        if(!loaded||!onboarded)return;
+        const tk=dateKey(),tp=entries.reduce((s,e)=>s+e.protein,0);
+        const nh={...history,[tk]:{total:tp,goal:dailyGoal,entries}};
+        setHistory(nh);saveS(SK.history,nh);
+      },[entries,loaded,onboarded]);
+
+      useEffect(()=>{if(loaded&&onboarded)saveS(SK.settings,{dailyGoal});},[dailyGoal,loaded,onboarded]);
+
+      const total=entries.reduce((s,e)=>s+e.protein,0);
+      const rem=Math.max(0,dailyGoal-total);
+
+      const doParseAI=useCallback(async(text)=>{
+        setIsProcessing(true);setError("");
+        try{
+          const parsed=await parseFood(text);
+          if(parsed.items?.length>0){
+            const ready=[],needs=[];
+            parsed.items.forEach((item,i)=>{const base={...item,id:Date.now()+i,time:new Date().toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})};item.needs_clarification?needs.push({...base,quantity:""}):ready.push(base);});
+            if(ready.length)setEntries(p=>[...p,...ready]);
+            if(needs.length)setPendingItems(p=>[...p,...needs]);
+          }else{setError("Couldn't identify any food items. Try again?");}
+        }catch(err){console.error(err);setError("Failed to analyze. Check your connection and try again.");}
+        finally{setIsProcessing(false);setTranscript("");}
+      },[]);
+
+      const confirmPending=(id,qty)=>{const item=pendingItems.find(p=>p.id===id);if(!item||!qty)return;const n=parseFloat(qty);if(isNaN(n)||n<=0)return;setEntries(p=>[...p,{id:item.id,name:item.name,portion:`${n} ${item.unit||"serving"}${n!==1?"s":""}`,protein:Math.round(n*(item.protein_per_unit||0)),time:item.time}]);setPendingItems(p=>p.filter(x=>x.id!==id));};
+
+      const startListen=useCallback(()=>{
+        const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+        if(!SR){setError("Speech recognition not supported. Try Chrome or Safari, or type below.");return;}
+        const r=new SR();r.continuous=false;r.interimResults=true;r.lang="en-US";
+        r.onstart=()=>setIsListening(true);
+        r.onresult=e=>setTranscript(Array.from(e.results).map(x=>x[0].transcript).join(""));
+        r.onerror=e=>{setIsListening(false);if(e.error==="not-allowed")setError("Microphone access denied. Please allow mic access or type below.");};
+        r.onend=()=>{setIsListening(false);const ft=recRef.current?._lastTranscript;if(ft)doParseAI(ft);};
+        recRef.current=r;r.start();
+      },[doParseAI]);
+
+      useEffect(()=>{if(recRef.current)recRef.current._lastTranscript=transcript;},[transcript]);
+      const stopListen=useCallback(()=>{recRef.current?.stop();},[]);
+      const handleText=()=>{if(textInput.trim()){doParseAI(textInput.trim());setTextInput("");}};
+      const delEntry=id=>setEntries(p=>p.filter(e=>e.id!==id));
+      const clearDay=()=>{setEntries([]);setError("");};
+      const today=new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+
+      if(!loaded)return<div style={{minHeight:"100vh",background:T.bg,display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{color:T.accent,fontSize:16,animation:"pulse 1.5s ease infinite"}}>Loading...</div></div>;
+      if(!onboarded)return<OnboardingScreen onComplete={g=>{setDailyGoal(g);setTempGoal(g);setOnboarded(true);}}/>;
+      if(showHistory)return<HistoryView history={history} goal={dailyGoal} onClose={()=>setShowHistory(false)}/>;
+
+      return (
+        <div style={{minHeight:"100vh",background:T.bg,color:T.text,maxWidth:430,margin:"0 auto",position:"relative",paddingBottom:40}}>
+          <div style={{padding:"20px 24px 0",display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+            <div>
+              <h1 style={{fontSize:22,fontWeight:700,letterSpacing:-0.5,background:`linear-gradient(135deg,${T.text},${T.accent})`,WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Protein</h1>
+              <div style={{fontSize:12,color:T.textDim,marginTop:2}}>{today}</div>
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={()=>setShowHistory(true)} style={{background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.textDim,fontSize:12,padding:"6px 12px",borderRadius:8,cursor:"pointer"}}>History</button>
+              <button onClick={clearDay} style={{background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.textDim,fontSize:12,padding:"6px 12px",borderRadius:8,cursor:"pointer"}}>Reset</button>
+              <button onClick={()=>{setShowSettings(!showSettings);setTempGoal(dailyGoal);}} style={{background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.textDim,fontSize:16,width:34,height:34,borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>⚙</button>
+            </div>
+          </div>
+
+          {showSettings&&(
+            <div style={{margin:"16px 24px 0",padding:16,background:T.surface,borderRadius:14,border:`1px solid ${T.surfaceLight}`,animation:"fadeIn 0.3s ease"}}>
+              <label style={{fontSize:13,color:T.textDim,display:"block",marginBottom:8}}>Daily Protein Goal (grams)</label>
+              <div style={{display:"flex",gap:8}}>
+                <input type="number" value={tempGoal} onChange={e=>setTempGoal(Number(e.target.value))} style={{flex:1,background:T.bg,border:`1px solid ${T.surfaceLight}`,color:T.text,fontSize:16,padding:"10px 14px",borderRadius:10}}/>
+                <button onClick={()=>{setDailyGoal(tempGoal);setShowSettings(false);}} style={{background:T.accent,color:T.bg,border:"none",padding:"10px 20px",borderRadius:10,fontSize:14,fontWeight:600,cursor:"pointer"}}>Save</button>
+              </div>
+            </div>
+          )}
+
+          <div style={{padding:"28px 24px 8px"}}>
+            <CircularProgress current={total} goal={dailyGoal}/>
+            <div style={{textAlign:"center",marginTop:16}}><span style={{fontSize:13,color:rem>0?T.textDim:T.success,fontWeight:500}}>{rem>0?`${rem}g remaining`:`Goal reached! +${total-dailyGoal}g over`}</span></div>
+          </div>
+
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",padding:"20px 24px"}}>
+            <MicButton isListening={isListening} onClick={isListening?stopListen:startListen} disabled={isProcessing}/>
+            <div style={{marginTop:14,fontSize:13,color:T.textDim,textAlign:"center",minHeight:20}}>
+              {isProcessing?<span style={{animation:"pulse 1.5s ease infinite",color:T.accent}}>Analyzing...</span>:isListening?<span style={{color:T.accent}}>Listening... tap to stop</span>:"Tap to log food"}
+            </div>
+            {transcript&&<div style={{marginTop:10,padding:"10px 16px",background:T.surface,borderRadius:10,fontSize:14,color:T.text,width:"100%",textAlign:"center",fontStyle:"italic",border:`1px solid ${T.surfaceLight}`}}>"{transcript}"</div>}
+            <div style={{display:"flex",gap:8,width:"100%",marginTop:16}}>
+              <input type="text" value={textInput} onChange={e=>setTextInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleText()} placeholder="Or type what you ate..." disabled={isProcessing} style={{flex:1,background:T.surface,border:`1px solid ${T.surfaceLight}`,color:T.text,fontSize:14,padding:"12px 16px",borderRadius:12}} onFocus={e=>e.target.style.borderColor=T.accent} onBlur={e=>e.target.style.borderColor=T.surfaceLight}/>
+              <button onClick={handleText} disabled={isProcessing||!textInput.trim()} style={{background:T.accent,color:T.bg,border:"none",width:44,height:44,borderRadius:12,fontSize:18,cursor:textInput.trim()?"pointer":"not-allowed",opacity:textInput.trim()?1:0.4,display:"flex",alignItems:"center",justifyContent:"center"}}>→</button>
+            </div>
+          </div>
+
+          {error&&<div style={{margin:"0 24px",padding:"12px 16px",background:"rgba(232,90,90,0.1)",border:"1px solid rgba(232,90,90,0.2)",borderRadius:10,fontSize:13,color:T.error,animation:"fadeIn 0.3s ease"}}>{error}</div>}
+
+          {pendingItems.length>0&&(
+            <div style={{padding:"8px 24px"}}>
+              <div style={{fontSize:11,color:T.accent,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12,fontWeight:600}}>How much?</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {pendingItems.map(item=><ClarificationCard key={item.id} item={item} onConfirm={qty=>confirmPending(item.id,qty)} onDismiss={()=>setPendingItems(p=>p.filter(x=>x.id!==item.id))}/>)}
+              </div>
+            </div>
+          )}
+
+          <div style={{padding:"8px 24px 24px"}}>
+            {entries.length>0&&<div style={{fontSize:11,color:T.textDim,textTransform:"uppercase",letterSpacing:1.5,marginBottom:12,fontWeight:600}}>Today's Log</div>}
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {entries.map((e,i)=><FoodItem key={e.id} item={e} onDelete={()=>delEntry(e.id)} animDelay={i<3?i*80:0}/>)}
+            </div>
+            {entries.length===0&&!isProcessing&&(
+              <div style={{textAlign:"center",padding:"32px 16px",color:T.textDim,fontSize:14}}>
+                <div style={{fontSize:32,marginBottom:8,opacity:0.4}}>🍗</div>Log your first meal to get started
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
