@@ -1,6 +1,6 @@
 {
-  "name": "Protein Tracker",
-  "short_name": "Protein",
+  "name": "DailyP — Hit your protein. Every day.",
+  "short_name": "DailyP",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1714",
