@@ -1,48 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DailyP — Privacy Policy</title>
-  <style>
-    body { background: #1a1714; color: #f0ece6; font-family: -apple-system, 'Helvetica Neue', sans-serif; max-width: 640px; margin: 0 auto; padding: 40px 24px; line-height: 1.7; }
-    h1 { font-size: 28px; margin-bottom: 8px; }
-    h2 { font-size: 18px; margin-top: 32px; margin-bottom: 8px; color: #e8943a; }
-    p { color: #c4bfb8; margin-bottom: 16px; }
-    a { color: #e8943a; }
-    .date { font-size: 14px; color: #9a9389; margin-bottom: 32px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyP — Privacy Policy</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #141210;
+            --bg-warm: #1A1714;
+            --surface: #242018;
+            --surface-border-solid: #3A3020;
+            --text: #EDE6D6;
+            --text-muted: #9A9080;
+            --accent: #E8A838;
+        }
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 660px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--text);
+        }
+        .logo-icon {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+        .logo span { color: var(--accent); }
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
+        }
+        .updated {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+        h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent);
+        }
+        p, li { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 0.75rem; }
+        ul { padding-left: 1.25rem; margin-bottom: 1rem; }
+        li { margin-bottom: 0.4rem; }
+        strong { color: var(--text); font-weight: 600; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back {
+            display: inline-block;
+            margin-top: 2.5rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
 </head>
 <body>
-  <h1>Privacy Policy</h1>
-  <div class="date">Last updated: March 23, 2026</div>
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon">P</div>
+            Daily<span>P</span>
+        </a>
 
-  <p>DailyP ("we", "our", or "the app") is committed to protecting your privacy. This policy explains what data DailyP collects, how it's used, and your rights.</p>
+        <h1>Privacy Policy</h1>
+        <p class="updated">Last updated: March 25, 2026</p>
 
-  <h2>Data We Collect</h2>
-  <p><strong>Food log entries:</strong> When you log food via voice or text, the text of what you said or typed is sent to our server to calculate protein content. We do not store this text on our servers after processing — it is used only to return the protein estimate and then discarded.</p>
-  <p><strong>Local data:</strong> Your protein goals, daily food logs, and history are stored locally on your device. This data never leaves your device except when food text is sent for processing as described above.</p>
-  <p><strong>Voice data:</strong> When you use voice input, speech recognition is performed by Apple's on-device speech recognition system. Audio is not sent to DailyP's servers.</p>
+        <p>DailyP ("we", "our", or "the app") is committed to protecting your privacy. This policy explains what data DailyP collects, how it is processed, and your rights.</p>
 
-  <h2>Data We Don't Collect</h2>
-  <p>We do not collect, store, or have access to: your name, email address, location, health data, contacts, photos, browsing history, device identifiers, or any other personal information. We do not require an account to use DailyP.</p>
+        <h2>Overview</h2>
+        <p>DailyP is designed with privacy as a core principle. We do not require an account, we do not collect personal information, and all food log data is stored locally on your device. The only data transmitted from your device is the text of your food descriptions, which is sent to a third-party AI service solely to estimate protein content.</p>
 
-  <h2>Third-Party Services</h2>
-  <p>Food text input is processed using Anthropic's Claude API to estimate protein content. Anthropic's privacy policy can be found at <a href="https://www.anthropic.com/privacy">anthropic.com/privacy</a>. No personally identifiable information is included in these API requests.</p>
+        <h2>Data We Collect and Process</h2>
 
-  <h2>Analytics & Advertising</h2>
-  <p>DailyP does not include any analytics, tracking, or advertising SDKs. We do not track how you use the app. We do not show ads.</p>
+        <p><strong>Food descriptions (transmitted to a third party):</strong> When you log food via voice or text input, the text of what you said or typed is sent from your device to our backend server hosted on Vercel (vercel.com), which then forwards it to Anthropic's Claude API (anthropic.com) to estimate protein content. This text may contain descriptions of food you ate, including quantities and meal details. This data is used solely to return a protein estimate to you. Our server does not log or store your food descriptions. Anthropic processes this data in accordance with their <a href="https://www.anthropic.com/privacy">Privacy Policy</a> and <a href="https://www.anthropic.com/policies/usage-policy">Usage Policy</a>. Per Anthropic's API data policy, data sent through their API is not used to train their models.</p>
 
-  <h2>Data Retention</h2>
-  <p>All food log data is stored locally on your device. If you delete the app, all data is permanently deleted. We have no ability to recover your data because we never had access to it.</p>
+        <p><strong>Voice data:</strong> When you use voice input, speech-to-text conversion is performed entirely on-device by Apple's built-in speech recognition framework. Raw audio is never transmitted to DailyP's servers or any third party. Only the resulting text transcription is sent for protein estimation as described above.</p>
 
-  <h2>Children's Privacy</h2>
-  <p>DailyP is not directed at children under 13. We do not knowingly collect any information from children.</p>
+        <p><strong>Local data (never transmitted):</strong> Your daily protein goal, food log entries (food name, portion, protein amount), and historical tracking data are stored locally on your device using on-device storage. This data never leaves your device and is never transmitted to DailyP, Anthropic, or any other service.</p>
 
-  <h2>Changes to This Policy</h2>
-  <p>We may update this policy from time to time. Any changes will be posted on this page with an updated date.</p>
+        <p><strong>Onboarding inputs (never transmitted):</strong> During initial setup, you may enter your weight, activity level, and fitness goal to calculate a suggested daily protein target. This information is stored locally on your device and is never transmitted to any server.</p>
 
-  <h2>Contact</h2>
-  <p>If you have questions about this privacy policy, contact us at privacy@dailyp.app.</p>
+        <h2>Data We Do Not Collect</h2>
+        <p>We do not collect, store, or have access to:</p>
+        <ul>
+            <li>Your name, email address, or any account information (no account is required)</li>
+            <li>Your location or IP address</li>
+            <li>Health or medical data (protein estimates are for general wellness only)</li>
+            <li>Device identifiers, advertising IDs, or fingerprints</li>
+            <li>Contacts, photos, or browsing history</li>
+            <li>Usage analytics or behavioral data</li>
+        </ul>
+
+        <h2>Third-Party Services</h2>
+        <p>DailyP uses the following third-party services:</p>
+        <ul>
+            <li><strong>Anthropic Claude API</strong> (anthropic.com) — processes food description text to estimate protein content. Data sent to Anthropic consists solely of food descriptions (e.g., "two scrambled eggs and toast"). No personally identifiable information is included. Anthropic does not use API data to train models.</li>
+            <li><strong>Vercel</strong> (vercel.com) — hosts the backend server that relays food descriptions to the Anthropic API. Vercel does not log or store the content of API requests made by DailyP.</li>
+        </ul>
+        <p>DailyP does not use any other third-party services, SDKs, analytics tools, crash reporting tools, or advertising networks.</p>
+
+        <h2>Analytics and Advertising</h2>
+        <p>DailyP does not include any analytics, tracking, crash reporting, or advertising SDKs. We do not track how you use the app. We do not show ads. We have no way to know who our users are.</p>
+
+        <h2>Data Retention</h2>
+        <p>All food log data is stored locally on your device. If you delete the app or use the "Reset Account" feature in Settings, all data is permanently deleted. We have no ability to recover your data because we never had access to it. Food description text sent for protein estimation is processed in real time and is not stored by our server.</p>
+
+        <h2>Children's Privacy</h2>
+        <p>DailyP is not directed at children under 13. We do not knowingly collect any information from children.</p>
+
+        <h2>Health Disclaimer</h2>
+        <p>DailyP provides estimated protein information for general wellness tracking purposes only. Protein estimates are approximate and may not be accurate for all foods. DailyP is not a medical device and is not intended to diagnose, treat, cure, or prevent any disease or medical condition. The protein goal suggested during onboarding is a general estimate based on commonly used formulas and is not personalized medical or nutritional advice. Always consult a qualified healthcare professional or registered dietitian before making changes to your diet, especially if you have any medical conditions.</p>
+
+        <h2>Changes to This Policy</h2>
+        <p>We may update this policy from time to time. Any changes will be posted on this page with an updated date.</p>
+
+        <h2>Contact</h2>
+        <p>If you have questions about this privacy policy or DailyP's data practices, contact us at <a href="mailto:support@dailyp.app">support@dailyp.app</a>.</p>
+
+        <a href="/" class="back">&larr; Back to DailyP</a>
+    </div>
 </body>
 </html>

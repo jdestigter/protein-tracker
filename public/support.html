@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyP — Support</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #141210;
+            --bg-warm: #1A1714;
+            --surface: #242018;
+            --surface-border-solid: #3A3020;
+            --text: #EDE6D6;
+            --text-muted: #9A9080;
+            --accent: #E8A838;
+        }
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--text);
+        }
+        .logo-icon {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+        .logo span { color: var(--accent); }
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 1.5rem;
+        }
+        p { margin-bottom: 1.25rem; color: var(--text-muted); font-size: 0.95rem; }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--surface-border-solid);
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 1.25rem;
+        }
+        .card h3 {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .card p { margin-bottom: 0; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back {
+            display: inline-block;
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon">P</div>
+            Daily<span>P</span>
+        </a>
+
+        <h1>Support</h1>
+        <p>Need help with DailyP? We're here for you.</p>
+
+        <div class="card">
+            <h3>Contact Us</h3>
+            <p>For questions, feedback, or support requests, email us at <a href="mailto:support@dailyp.app">support@dailyp.app</a>. We typically respond within 24 hours.</p>
+        </div>
+
+        <div class="card">
+            <h3>Frequently Asked Questions</h3>
+            <p>
+                <strong style="color: var(--text);">How accurate is the protein tracking?</strong><br>
+                DailyP uses AI to estimate protein content based on your food descriptions. Estimates are approximate and intended for general wellness tracking, not as a substitute for professional dietary guidance.
+            </p>
+        </div>
+
+        <div class="card">
+            <h3>How do I reset my data?</h3>
+            <p>Go to Settings (gear icon in the top right) and tap "Reset Account." This will clear all your food logs and history. You can also delete and reinstall the app to start fresh.</p>
+        </div>
+
+        <div class="card">
+            <h3>Privacy</h3>
+            <p>DailyP does not collect personal information, require an account, or show ads. All food log data is stored locally on your device. Read our full <a href="/privacy.html">Privacy Policy</a>.</p>
+        </div>
+
+        <a href="/" class="back">&larr; Back to DailyP</a>
+    </div>
+</body>
+</html>
