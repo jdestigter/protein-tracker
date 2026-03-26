@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DailyP — Sources</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #141210;
+            --surface: #242018;
+            --surface-border-solid: #3A3020;
+            --text: #EDE6D6;
+            --text-muted: #9A9080;
+            --accent: #E8A838;
+        }
+        body {
+            font-family: 'Inter', -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            -webkit-font-smoothing: antialiased;
+        }
+        .container {
+            max-width: 660px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        .logo {
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--text);
+        }
+        .logo-icon {
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.75rem;
+            color: var(--accent);
+        }
+        .logo span { color: var(--accent); }
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+        }
+        .intro {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            margin-bottom: 2.5rem;
+            line-height: 1.7;
+        }
+        h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            margin-bottom: 0.75rem;
+            color: var(--accent);
+        }
+        p, li {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            margin-bottom: 0.75rem;
+        }
+        .source-card {
+            background: var(--surface);
+            border: 1px solid var(--surface-border-solid);
+            border-radius: 14px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .source-card h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+        .source-card p {
+            margin-bottom: 0.5rem;
+            font-size: 0.88rem;
+        }
+        .source-card .journal {
+            font-style: italic;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .note {
+            margin-top: 2rem;
+            padding: 1.25rem;
+            background: rgba(232, 168, 56, 0.08);
+            border: 1px solid rgba(232, 168, 56, 0.2);
+            border-radius: 14px;
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .back {
+            display: inline-block;
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="logo">
+            <div class="logo-icon">P</div>
+            Daily<span>P</span>
+        </a>
+
+        <h1>Sources</h1>
+        <p class="intro">DailyP's protein goal recommendations are based on established sports nutrition and dietary research. Below are the primary sources informing our calculations.</p>
+
+        <h2>Daily Protein Intake Recommendations</h2>
+
+        <div class="source-card">
+            <h3>International Society of Sports Nutrition (ISSN) Position Stand</h3>
+            <p>Jäger, R., Kerksick, C.M., Campbell, B.I., et al. (2017). International Society of Sports Nutrition Position Stand: protein and exercise. <span class="journal">Journal of the International Society of Sports Nutrition</span>, 14(20).</p>
+            <p>Recommends 1.4–2.0 g/kg/day for physically active individuals to optimize exercise training adaptations.</p>
+            <p><a href="https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8" target="_blank">View source →</a></p>
+        </div>
+
+        <div class="source-card">
+            <h3>American College of Sports Medicine (ACSM)</h3>
+            <p>Thomas, D.T., Erdman, K.A., Burke, L.M. (2016). Position of the Academy of Nutrition and Dietetics, Dietitians of Canada, and the American College of Sports Medicine: Nutrition and Athletic Performance. <span class="journal">Journal of the Academy of Nutrition and Dietetics</span>, 116(3), 501–528.</p>
+            <p>Recommends 1.2–2.0 g/kg/day for athletes, with higher intakes during periods of increased training intensity or caloric restriction.</p>
+            <p><a href="https://pubmed.ncbi.nlm.nih.gov/26920240/" target="_blank">View source →</a></p>
+        </div>
+
+        <div class="source-card">
+            <h3>Dietary Reference Intakes (DRI)</h3>
+            <p>Institute of Medicine (2005). Dietary Reference Intakes for Energy, Carbohydrate, Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids. <span class="journal">The National Academies Press</span>, Washington, DC.</p>
+            <p>Establishes the Recommended Dietary Allowance (RDA) for protein at 0.8 g/kg/day for the general adult population as a minimum to meet basic nutritional requirements.</p>
+            <p><a href="https://nap.nationalacademies.org/catalog/10490/dietary-reference-intakes-for-energy-carbohydrate-fiber-fat-fatty-acids-cholesterol-protein-and-amino-acids" target="_blank">View source →</a></p>
+        </div>
+
+        <div class="source-card">
+            <h3>Protein Intake During Weight Loss</h3>
+            <p>Mettler, S., Mitchell, N., Tipton, K.D. (2010). Increased protein intake reduces lean body mass loss during weight loss in athletes. <span class="journal">Medicine & Science in Sports & Exercise</span>, 42(2), 326–337.</p>
+            <p>Supports higher protein intake (1.8–2.7 g/kg/day) during caloric restriction to preserve lean body mass.</p>
+            <p><a href="https://pubmed.ncbi.nlm.nih.gov/19927027/" target="_blank">View source →</a></p>
+        </div>
+
+        <h2>How DailyP Calculates Your Goal</h2>
+
+        <div class="source-card">
+            <h3>Calculation Method</h3>
+            <p>DailyP uses your body weight, self-reported activity level, and fitness goal to suggest a daily protein target. The base calculation uses approximately 0.7–1.0 g per pound of body weight (1.5–2.2 g/kg), adjusted by activity level and goal:</p>
+            <p><strong style="color: var(--text);">Activity adjustment:</strong> Sedentary (lower range) to Athlete (higher range), consistent with ISSN and ACSM guidelines for varying training loads.</p>
+            <p><strong style="color: var(--text);">Goal adjustment:</strong> Higher protein for fat loss (to preserve muscle) and muscle building, moderate for maintenance, based on the research cited above.</p>
+            <p>The result is a general estimate intended for wellness tracking. Individual protein needs vary based on age, medical conditions, training specifics, and other factors not captured by this calculation.</p>
+        </div>
+
+        <h2>AI-Estimated Protein Content</h2>
+
+        <div class="source-card">
+            <h3>Food Protein Estimates</h3>
+            <p>When you log food via voice or text, DailyP uses AI (Anthropic's Claude) to estimate the protein content based on your description. These estimates are based on the AI model's training data, which includes widely available nutritional databases such as the USDA FoodData Central.</p>
+            <p>Estimates are approximate and may vary from actual protein content depending on preparation method, specific brands, and portion accuracy. For precise nutritional information, consult the USDA FoodData Central database directly.</p>
+            <p><a href="https://fdc.nal.usda.gov/" target="_blank">USDA FoodData Central →</a></p>
+        </div>
+
+        <div class="note">
+            <strong style="color: var(--text);">Important:</strong> DailyP is designed for general wellness tracking and is not a medical device. Protein recommendations are general estimates based on published research and are not personalized medical or nutritional advice. Consult a qualified healthcare professional or registered dietitian before making significant changes to your diet, especially if you have kidney disease, liver conditions, or other medical conditions that affect protein metabolism.
+        </div>
+
+        <a href="/" class="back">&larr; Back to DailyP</a>
+    </div>
+</body>
+</html>
