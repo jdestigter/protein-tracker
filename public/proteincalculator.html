@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein Calculator — How Much Protein Do You Need Per Day? | DailyP</title>
+    <meta name="description" content="Free daily protein calculator. Enter your weight, activity level, and goal to get a personalized protein target in grams — the same formula the DailyP app uses. Backed by published research.">
+    <link rel="canonical" href="https://dailyp.app/protein-calculator.html">
+    <meta property="og:title" content="Protein Calculator — Your Daily Protein Target in Grams">
+    <meta property="og:description" content="Enter your weight, activity level, and goal. Get a personalized daily protein target — the exact formula the DailyP app uses.">
+    <meta property="og:url" content="https://dailyp.app/protein-calculator.html">
+    <meta property="og:type" content="website">
+    <link rel="icon" type="image/png" href="/assets/icon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How much protein do I need per day?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "It depends on your body weight, activity level, and goal. The RDA is 0.8 g per kg of body weight (about 0.36 g per lb), but that is a minimum to prevent deficiency, not an optimum. For active people, the International Society of Sports Nutrition recommends 1.4–2.0 g/kg (0.64–0.9 g/lb). Most people aiming to build or preserve muscle do well between 0.7 and 1.0 g per lb of body weight per day."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need more protein while losing weight?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. In a calorie deficit your body is more likely to break down muscle for energy. Research in athletes (Mettler et al., 2010) found that a high-protein intake around 2.3 g/kg preserved lean mass during weight loss significantly better than 1.0 g/kg. That's why this calculator raises your per-pound target when your goal is losing weight."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much protein should I eat on a GLP-1 medication like Ozempic or Wegovy?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Protein becomes more important, not less, on GLP-1 medications. In the STEP 1 trial's body-composition substudy, roughly 40% of the weight participants lost was lean mass. Because GLP-1s suppress appetite, it's easy to under-eat protein without noticing. Clinicians commonly suggest 1.2–1.5 g/kg per day plus resistance training to protect muscle. Tracking protein daily is the simplest way to make sure it actually happens."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I eat too much protein?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "For healthy people, intakes well above the RDA have not been shown to harm kidney function. Reviews of high-protein diets up to around 2 g/kg (and studies beyond that) in people with healthy kidneys found no adverse effects. If you have kidney disease or another medical condition, talk to your doctor before increasing protein."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does protein timing matter, or just the daily total?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The daily total matters most. Spreading it across 3–4 meals of 25–40 g each may help maximize muscle protein synthesis, but no distribution scheme rescues a day that comes up 50 g short. Hit the daily number first; optimize timing second."
+          }
+        }
+      ]
+    }
+    </script>
+    <style>
+        :root {
+            --bg: #1a1714;
+            --bg-deep: #13110f;
+            --surface: #242019;
+            --surface-light: #2e2a23;
+            --accent: #e8943a;
+            --accent-dim: rgba(232, 148, 58, 0.12);
+            --accent-glow: rgba(232, 148, 58, 0.25);
+            --text: #f0ece6;
+            --text-dim: #9a9389;
+            --success: #7bc67e;
+            --error: #e85a5a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        a { color: var(--accent); }
+        nav { display: flex; justify-content: space-between; align-items: center; max-width: 960px; margin: 0 auto; padding: 20px 24px; }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); font-weight: 700; font-size: 20px; }
+        .nav-logo em { color: var(--accent); font-style: normal; }
+        .nav-logo-icon svg { width: 32px; height: 32px; display: block; }
+        .nav-cta { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); color: #1a1714; text-decoration: none; font-weight: 600; font-size: 14px; padding: 10px 18px; border-radius: 100px; }
+        .wrap { max-width: 720px; margin: 0 auto; padding: 24px; }
+        h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 24px 0 12px; }
+        .sub { color: var(--text-dim); font-size: 17px; margin-bottom: 32px; }
+        .calc { background: var(--surface); border: 1px solid var(--surface-light); border-radius: 20px; padding: 28px; margin-bottom: 16px; }
+        .field { margin-bottom: 20px; }
+        .field label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+        .row { display: flex; gap: 10px; }
+        input[type=number] { flex: 1; background: var(--bg-deep); border: 1px solid var(--surface-light); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 18px; padding: 12px 14px; border-radius: 12px; width: 100%; }
+        input[type=number]:focus { outline: none; border-color: var(--accent); }
+        .seg { display: flex; background: var(--bg-deep); border-radius: 12px; padding: 4px; gap: 4px; }
+        .seg button { flex: 1; background: transparent; border: none; color: var(--text-dim); font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 14px; padding: 10px 6px; border-radius: 9px; cursor: pointer; }
+        .seg button.on { background: var(--accent); color: #1a1714; }
+        .seg.stack { flex-direction: column; }
+        .seg.stack button { text-align: left; padding: 12px 14px; }
+        .seg.stack button small { display: block; font-weight: 400; font-size: 12px; opacity: .75; }
+        .result { text-align: center; background: var(--accent-dim); border: 1px solid var(--accent-glow); border-radius: 16px; padding: 22px; margin-top: 8px; }
+        .result .num { font-family: 'Space Mono', monospace; font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1; }
+        .result .lbl { color: var(--text-dim); font-size: 14px; margin-top: 6px; }
+        .math { color: var(--text-dim); font-size: 13px; margin-top: 10px; font-family: 'Space Mono', monospace; }
+        h2 { font-size: 24px; margin: 44px 0 14px; }
+        p { margin-bottom: 14px; color: var(--text); }
+        p.dim, li { color: var(--text-dim); }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 16px 0; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--surface-light); }
+        th { color: var(--text-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+        td { color: var(--text); }
+        .faq-item { background: var(--surface); border: 1px solid var(--surface-light); border-radius: 14px; padding: 18px 20px; margin-bottom: 10px; }
+        .faq-item h3 { font-size: 16px; margin-bottom: 8px; }
+        .faq-item p { color: var(--text-dim); font-size: 15px; margin: 0 0 8px; }
+        .cta-box { text-align: center; background: var(--surface); border: 1px solid var(--surface-light); border-radius: 20px; padding: 32px 24px; margin: 44px 0; }
+        .cta-box h2 { margin: 0 0 10px; }
+        .cta-box p { color: var(--text-dim); }
+        footer { max-width: 960px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; padding: 28px 24px; color: var(--text-dim); font-size: 14px; border-top: 1px solid var(--surface-light); flex-wrap: wrap; gap: 10px; }
+        .footer-links { display: flex; gap: 18px; }
+        .footer-links a { color: var(--text-dim); text-decoration: none; }
+        .note { font-size: 13px; color: var(--text-dim); margin-top: 24px; }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/" class="nav-logo">
+        <div class="nav-logo-icon">
+            <svg viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="16" r="14" stroke="#2e2a23" stroke-width="2.5"/>
+                <circle cx="16" cy="16" r="14" stroke="#e8943a" stroke-width="2.5" stroke-dasharray="88" stroke-dashoffset="22" stroke-linecap="round" transform="rotate(-90 16 16)"/>
+                <text x="16" y="21" text-anchor="middle" fill="#f0ece6" font-size="14" font-weight="700" font-family="DM Sans, sans-serif">P</text>
+            </svg>
+        </div>
+        <span>Daily<em>P</em></span>
+    </a>
+    <a href="https://apps.apple.com/app/dailyp/id6761020388" class="nav-cta">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+        Download Free
+    </a>
+</nav>
+
+<div class="wrap">
+    <h1>Protein Calculator</h1>
+    <p class="sub">How much protein do you need per day? Enter your weight, pick your activity level and goal, and get a personalized daily target in grams — the exact same formula the DailyP app uses.</p>
+
+    <div class="calc">
+        <div class="field">
+            <label>Body weight</label>
+            <div class="row">
+                <input type="number" id="weight" value="180" min="50" max="500" inputmode="decimal" aria-label="Body weight">
+                <div class="seg" style="flex:0 0 120px" id="unitSeg">
+                    <button class="on" data-u="lb">lb</button>
+                    <button data-u="kg">kg</button>
+                </div>
+            </div>
+        </div>
+        <div class="field">
+            <label>Activity level</label>
+            <div class="seg stack" id="actSeg">
+                <button data-a="0.7">Mostly sedentary<small>Desk job, little structured exercise</small></button>
+                <button class="on" data-a="0.85">Lightly active<small>Exercise 1–3 days a week</small></button>
+                <button data-a="1.0">Very active<small>Training 4–6 days a week</small></button>
+                <button data-a="1.2">Athlete / heavy training<small>Daily intense training or physical job</small></button>
+            </div>
+        </div>
+        <div class="field">
+            <label>Goal</label>
+            <div class="seg" id="goalSeg">
+                <button class="on" data-g="1.0">Lose weight</button>
+                <button data-g="0.8">Maintain</button>
+                <button data-g="1.1">Build muscle</button>
+            </div>
+        </div>
+        <div class="result">
+            <div class="num" id="out">122g</div>
+            <div class="lbl">recommended daily protein</div>
+            <div class="math" id="math"></div>
+        </div>
+    </div>
+    <p class="note">This is the onboarding formula from the DailyP iOS app, so the number here matches what the app will set as your daily ring target. It's an evidence-informed starting point, not medical advice — adjust with how you feel and perform, and consult a professional if you have a medical condition.</p>
+
+    <h2>What the research says</h2>
+    <p class="dim">Protein recommendations vary by source because they answer different questions — "how much to avoid deficiency" versus "how much to build or protect muscle."</p>
+    <table>
+        <tr><th>Source</th><th>Recommendation</th><th>For whom</th></tr>
+        <tr><td>RDA (US Dietary Reference Intake)</td><td>0.8 g/kg (0.36 g/lb)</td><td>Minimum to prevent deficiency in sedentary adults</td></tr>
+        <tr><td>ACSM / Academy of Nutrition &amp; Dietetics</td><td>1.2–2.0 g/kg (0.54–0.9 g/lb)</td><td>Active adults and athletes</td></tr>
+        <tr><td>ISSN position stand (Jäger et al., 2017)</td><td>1.4–2.0 g/kg (0.64–0.9 g/lb)</td><td>Building and maintaining muscle</td></tr>
+        <tr><td>Mettler et al., 2010</td><td>~2.3 g/kg (~1.0 g/lb)</td><td>Preserving lean mass in a calorie deficit</td></tr>
+    </table>
+    <p class="dim">The pattern: the more active you are and the harder you're dieting, the more protein it takes to keep the muscle you have. That's what the activity and goal adjustments above reflect. Full citations are on our <a href="/sources.html">sources page</a>.</p>
+
+    <h2>Frequently asked questions</h2>
+    <div class="faq-item">
+        <h3>How much protein do I need per day?</h3>
+        <p>It depends on your weight, activity, and goal. The RDA (0.8 g/kg) is a floor, not a target — it's the amount that prevents deficiency, not the amount that supports training or dieting. For most active people, 0.7–1.0 g per pound of body weight per day is the practical range, which is what this calculator lands in.</p>
+    </div>
+    <div class="faq-item">
+        <h3>Do I need more protein while losing weight?</h3>
+        <p>Yes. In a deficit, your body will burn muscle as well as fat unless you give it a reason not to. Higher protein plus resistance training is that reason — Mettler et al. found ~2.3 g/kg preserved lean mass during weight loss far better than 1.0 g/kg. This calculator's "lose weight" goal uses the highest multiplier for exactly that reason.</p>
+    </div>
+    <div class="faq-item">
+        <h3>How much protein on a GLP-1 medication (Ozempic, Wegovy, Zepbound)?</h3>
+        <p>More important than ever. In the STEP 1 trial's body-composition substudy, roughly 40% of weight lost was lean mass. GLP-1s suppress appetite, so it's easy to under-eat protein without noticing. Clinicians commonly suggest 1.2–1.5 g/kg per day plus resistance training — and tracking daily is the only way to know you're hitting it.</p>
+    </div>
+    <div class="faq-item">
+        <h3>Can I eat too much protein?</h3>
+        <p>For healthy people, intakes well above the RDA haven't been shown to harm kidney function. If you have kidney disease or another medical condition, check with your doctor before increasing protein.</p>
+    </div>
+    <div class="faq-item">
+        <h3>Does timing matter, or just the daily total?</h3>
+        <p>Daily total first. Spreading protein across 3–4 meals of 25–40 g each may squeeze out a little extra muscle protein synthesis, but no timing scheme fixes a day that's 50 g short. Hit the number, then worry about distribution.</p>
+    </div>
+
+    <div class="cta-box">
+        <h2>Now the hard part: actually hitting it</h2>
+        <p>Knowing your number takes 10 seconds. Hitting it every day is the habit. DailyP is a voice-first protein tracker — just say what you ate, AI logs the protein, one ring shows where you stand. 30 seconds a day.</p>
+        <p style="margin-top:16px"><a href="https://apps.apple.com/app/dailyp/id6761020388" class="nav-cta">Download DailyP Free</a></p>
+    </div>
+</div>
+
+<footer>
+    <span>&copy; 2026 DailyP</span>
+    <div class="footer-links">
+        <a href="/protein-calculator.html">Protein Calculator</a>
+        <a href="/sources.html">Sources</a>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/support.html">Support</a>
+    </div>
+</footer>
+
+<script>
+(function(){
+    var unit='lb', act=0.85, goal=1.0;
+    var w=document.getElementById('weight'), out=document.getElementById('out'), math=document.getElementById('math');
+    function calc(){
+        var v=parseFloat(w.value);
+        if(!v||v<=0){out.textContent='—';math.textContent='';return;}
+        var lbs=unit==='kg'?v*2.205:v;
+        var g=Math.round(lbs*0.8*act*goal);
+        out.textContent=g+'g';
+        math.textContent=(unit==='kg'?v+'kg × 2.205 = '+(Math.round(lbs*10)/10)+'lb · ':'')+Math.round(lbs)+'lb × 0.8 × '+act+' × '+goal+' = '+g+'g';
+    }
+    function seg(id,attr,cb){
+        var el=document.getElementById(id);
+        el.addEventListener('click',function(e){
+            var b=e.target.closest('button'); if(!b)return;
+            el.querySelectorAll('button').forEach(function(x){x.classList.remove('on');});
+            b.classList.add('on'); cb(b.getAttribute(attr)); calc();
+        });
+    }
+    seg('unitSeg','data-u',function(v){
+        if(v===unit)return;
+        var cur=parseFloat(w.value);
+        if(cur>0){ w.value = v==='kg' ? Math.round(cur/2.205) : Math.round(cur*2.205); }
+        unit=v;
+    });
+    seg('actSeg','data-a',function(v){act=parseFloat(v);});
+    seg('goalSeg','data-g',function(v){goal=parseFloat(v);});
+    w.addEventListener('input',calc);
+    calc();
+})();
+</script>
+</body>
+</html>
