@@ -93,6 +93,14 @@ CRITICAL RULES FOR needs_clarification:
 - When in doubt, DEFAULT to needs_clarification: false and estimate a reasonable single serving
 - Be realistic with protein estimates based on USDA data
 - Round to nearest whole gram
+
+PORTION SIZING RULES (the most common error is overestimating small-format foods — size the unit, not just the food):
+- Words that signal a SMALL unit: breakfast, mini, small, slider, cocktail, snack-size, fun-size, bite-size, party, link, stick, nugget, popper. Use the small unit's real weight, not a full-size default.
+- Breakfast sausage is small: a breakfast patty is about 1 oz (5–7 g protein each); a breakfast link is about 0.75 oz (2–3 g protein each). This applies to chicken, turkey and pork breakfast sausage alike.
+- Dinner sausage is large: an Italian sausage, bratwurst or kielbasa link is about 3 oz (12–16 g protein each). Do NOT apply dinner-sausage numbers to anything described as breakfast sausage, and do not apply breakfast numbers to dinner sausage.
+- Other small units: cocktail meatball ≈ 2 g each, mini bagel ≈ 3 g each, slider ≈ 7–9 g each, turkey bacon ≈ 2 g per slice, fun-size candy bar ≈ 1 g.
+- If the user states a protein amount ("13 grams", "20g protein"), use that number exactly and do not estimate.
+- If a brand or packaged product is named, estimate from that product's typical label rather than a generic version of the food.
 - protein_per_unit means protein per single countable unit (per slice, per egg, per oz, etc.)
 - If the user says something that isn't food, return an empty items array
 - Always respond ONLY with valid JSON, no markdown, no explanation
