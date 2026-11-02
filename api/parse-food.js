@@ -160,7 +160,7 @@ async function lookupBranded(brand, product, apiKey) {
   return result;
 }
 
-async function applyLabelLookups(items, apiKey) {
+export async function applyLabelLookups(items, apiKey) {
   await Promise.all(
     items.map(async (item) => {
       if (!item || typeof item !== 'object') return;
