@@ -60,6 +60,124 @@ function cleanText(raw) {
   return t.length > 0 ? t : null;
 }
 
+// ---------------------------------------------------------------------------
+// Branded label lookup (added 2026-11).
+//
+// Why: users reported branded items coming back at ~2x the package label even
+// after the 2026-09-22 prompt change ("prefer package label for named brands").
+// The model guesses labels from memory; this looks the product up in USDA
+// FoodData Central's Branded Foods data instead.
+//
+// How: the model now tags branded items with `brand`, `product` and `servings`.
+// For those items we search FDC, keep only a confident match (brand matches and
+// most product words appear), convert FDC's per-100g protein to per-serving, and
+// overwrite `protein`. Each item gets `source: "label"` or `source: "estimate"`.
+//
+// Safe by default: no FDC_API_KEY env var -> lookup is skipped and responses are
+// exactly what they were before (plus `source: "estimate"`). Any FDC error,
+// timeout or weak match falls back to the model's estimate. The app ignores
+// fields it does not know, so the response stays backward compatible.
+// ---------------------------------------------------------------------------
+const FDC_TIMEOUT_MS = 2500;
+const FDC_CACHE_MAX = 500;
+const fdcCache = new Map(); // query -> result|null (per warm instance)
+
+function words(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 1);
+}
+
+// FDC Branded values are per 100 g / 100 ml. Returns grams protein per label
+// serving, or null when the record can't be converted reliably.
+function proteinPerServing(food) {
+  const n = (food.foodNutrients || []).find(
+    (x) => x.nutrientNumber === '203' || /^protein$/i.test(x.nutrientName || '')
+  );
+  const per100 = Number(n?.value);
+  const size = Number(food.servingSize);
+  const unit = String(food.servingSizeUnit || '').toLowerCase();
+  if (!Number.isFinite(per100) || !Number.isFinite(size) || size <= 0) return null;
+  if (!['g', 'grm', 'ml', 'mlt'].includes(unit)) return null;
+  const grams = (per100 * size) / 100;
+  return grams >= 0 && grams <= 80 ? grams : null; // sanity bound per serving
+}
+
+// Pick a match only when the brand matches and most product words appear.
+function bestMatch(foods, brand, product) {
+  const b = words(brand).join(' ');
+  const want = words(product);
+  let best = null;
+  for (const f of foods || []) {
+    const owner = words(`${f.brandName || ''} ${f.brandOwner || ''}`).join(' ');
+    if (!b || !owner.includes(b)) continue;
+    const have = new Set(words(f.description));
+    const hits = want.filter((w) => have.has(w)).length;
+    const score = want.length ? hits / want.length : 0;
+    const perServing = proteinPerServing(f);
+    if (perServing == null || score < 0.6) continue;
+    if (!best || score > best.score) best = { food: f, score, perServing };
+  }
+  return best;
+}
+
+async function lookupBranded(brand, product, apiKey) {
+  const query = `${brand} ${product}`.trim().toLowerCase();
+  if (fdcCache.has(query)) return fdcCache.get(query);
+
+  const url =
+    'https://api.nal.usda.gov/fdc/v1/foods/search' +
+    `?api_key=${encodeURIComponent(apiKey)}` +
+    `&query=${encodeURIComponent(query)}` +
+    '&dataType=Branded&pageSize=10';
+
+  let result = null;
+  let cacheable = false; // only cache real answers, never errors or timeouts
+  try {
+    const r = await fetch(url, { signal: AbortSignal.timeout(FDC_TIMEOUT_MS) });
+    if (r.ok) {
+      cacheable = true;
+      const data = await r.json();
+      const m = bestMatch(data.foods, brand, product);
+      if (m) {
+        result = {
+          perServing: m.perServing,
+          serving: m.food.householdServingFullText || `${m.food.servingSize} ${m.food.servingSizeUnit}`,
+          fdcId: m.food.fdcId,
+        };
+      }
+    }
+  } catch (e) {
+    console.error('FDC lookup failed:', e?.name || e);
+  }
+
+  if (cacheable) {
+    if (fdcCache.size >= FDC_CACHE_MAX) fdcCache.clear();
+    fdcCache.set(query, result);
+  }
+  return result;
+}
+
+async function applyLabelLookups(items, apiKey) {
+  await Promise.all(
+    items.map(async (item) => {
+      if (!item || typeof item !== 'object') return;
+      item.source = 'estimate';
+      if (!apiKey || item.needs_clarification || item.user_stated_protein) return;
+      if (typeof item.brand !== 'string' || typeof item.product !== 'string') return;
+      const hit = await lookupBranded(item.brand, item.product, apiKey);
+      if (!hit) return;
+      const servings = Number(item.servings) > 0 && Number(item.servings) <= 20 ? Number(item.servings) : 1;
+      item.protein = Math.round(hit.perServing * servings);
+      item.source = 'label';
+      item.label_serving = hit.serving;
+    })
+  );
+  return items;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -101,6 +219,8 @@ PORTION SIZING RULES (the most common error is overestimating small-format foods
 - Other small units: cocktail meatball ≈ 2 g each, mini bagel ≈ 3 g each, slider ≈ 7–9 g each, turkey bacon ≈ 2 g per slice, fun-size candy bar ≈ 1 g.
 - If the user states a protein amount ("13 grams", "20g protein"), use that number exactly and do not estimate.
 - If a brand or packaged product is named, estimate from that product's typical label rather than a generic version of the food.
+- For a named brand or packaged product, ALSO include "brand" (the brand only, e.g. "Fairlife"), "product" (the product name without the brand, e.g. "Core Power Elite chocolate shake") and "servings" (how many label servings were eaten, default 1). Omit these three fields for unbranded foods.
+- If the user states a protein amount, include "user_stated_protein": true.
 - protein_per_unit means protein per single countable unit (per slice, per egg, per oz, etc.)
 - If the user says something that isn't food, return an empty items array
 - Always respond ONLY with valid JSON, no markdown, no explanation
@@ -109,6 +229,7 @@ Respond ONLY with this JSON format:
 {
   "items": [
     { "name": "chicken breast", "portion": "6 oz", "protein": 42, "needs_clarification": false },
+    { "name": "Fairlife Core Power shake", "portion": "1 bottle", "protein": 26, "needs_clarification": false, "brand": "Fairlife", "product": "Core Power protein shake", "servings": 1 },
     { "name": "bacon", "needs_clarification": true, "default_portion": "3 slices", "unit": "slice", "protein_per_unit": 4 }
   ]
 }`;
@@ -142,6 +263,8 @@ Respond ONLY with this JSON format:
     if (!parsed || !Array.isArray(parsed.items)) {
       return res.status(200).json({ items: [] });
     }
+
+    await applyLabelLookups(parsed.items, process.env.FDC_API_KEY);
 
     return res.status(200).json(parsed);
   } catch (error) {
