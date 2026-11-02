@@ -679,72 +679,6 @@
             color: var(--text);
         }
 
-        /* ---- Pricing ---- */
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-top: 60px;
-            max-width: 700px;
-        }
-
-        .price-card {
-            padding: 36px 32px;
-            border-radius: 20px;
-            border: 1px solid var(--surface-light);
-            background: var(--surface);
-        }
-
-        .price-card.pro {
-            background: var(--accent-dim);
-            border-color: rgba(232, 148, 58, 0.25);
-            position: relative;
-        }
-
-        .price-card h3 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            letter-spacing: -0.2px;
-        }
-
-        .price-card.pro h3 { color: var(--accent); }
-
-        .price-amount {
-            font-size: 36px;
-            font-weight: 700;
-            letter-spacing: -1px;
-            margin-bottom: 4px;
-        }
-
-        .price-period {
-            font-size: 13px;
-            color: var(--text-dim);
-            margin-bottom: 24px;
-        }
-
-        .price-features {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .price-features li {
-            font-size: 14px;
-            color: var(--text-dim);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .price-features li::before {
-            content: '✓';
-            color: var(--success);
-            font-weight: 700;
-            font-size: 12px;
-        }
-
         /* ---- CTA Footer ---- */
         .cta-section {
             text-align: center;
@@ -848,7 +782,6 @@
             .comparison-grid { grid-template-columns: 1fr; }
             .personas { grid-template-columns: 1fr; }
             .ai-grid { grid-template-columns: 1fr; gap: 40px; }
-            .pricing-grid { grid-template-columns: 1fr; }
 
             .phone-frame { width: 200px; height: 420px; }
             .phone-screen { padding: 32px 12px 12px; }
@@ -1129,39 +1062,6 @@
                         <div class="ai-example-result">30g</div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Pricing -->
-<section>
-    <div class="section-inner reveal">
-        <div class="section-label">Pricing</div>
-        <h2>Free to start.<br>Cheap to keep.</h2>
-        <p class="section-sub">No paywall to try it. Upgrade when you're ready.</p>
-        <div class="pricing-grid">
-            <div class="price-card">
-                <h3>Free</h3>
-                <div class="price-amount">$0</div>
-                <div class="price-period">Forever</div>
-                <ul class="price-features">
-                    <li>3 voice logs per day</li>
-                    <li>Daily protein total</li>
-                    <li>Basic history</li>
-                    <li>Custom protein goal</li>
-                </ul>
-            </div>
-            <div class="price-card pro">
-                <h3>Pro</h3>
-                <div class="price-amount">$2.99</div>
-                <div class="price-period">per month &middot; or $19.99/year</div>
-                <ul class="price-features">
-                    <li>Unlimited voice logs</li>
-                    <li>Trends &amp; streaks</li>
-                    <li>Custom goals</li>
-                    <li>Priority AI processing</li>
-                </ul>
             </div>
         </div>
     </div>
