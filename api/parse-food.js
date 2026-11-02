@@ -69,8 +69,8 @@ function cleanText(raw) {
 // FoodData Central's Branded Foods data instead.
 //
 // How: the model now tags branded items with `brand`, `product` and `servings`.
-// For those items we search FDC, keep only a confident match (brand matches and
-// most product words appear), convert FDC's per-100g protein to per-serving, and
+// For those items we search FDC, keep only a confident match (see
+// rankCandidates), convert FDC's per-100g protein to per-serving, and
 // overwrite `protein`. Each item gets `source: "label"` or `source: "estimate"`.
 //
 // Safe by default: no FDC_API_KEY env var -> lookup is skipped and responses are
@@ -82,19 +82,36 @@ const FDC_TIMEOUT_MS = 2500;
 const FDC_CACHE_MAX = 500;
 const fdcCache = new Map(); // query -> result|null (per warm instance)
 
+// Normalise text to comparable words: lowercase, "non-fat" -> "nonfat",
+// punctuation to spaces, and a light plural fold ("breasts" -> "breast").
 function words(s) {
   return String(s || '')
     .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/(\w)-(\w)/g, '$1$2')
     .replace(/[^a-z0-9 ]+/g, ' ')
     .split(/\s+/)
-    .filter((w) => w.length > 1);
+    .filter((w) => w.length > 1)
+    .map((w) => (w.length > 3 && w.endsWith('s') && !w.endsWith('ss') ? w.slice(0, -1) : w));
 }
+
+// Words that say nothing about which product it is.
+const FILLER = new Set(['the', 'and', 'with', 'of', 'in', 'an', 'oz', 'fl', 'flavor', 'flavored', 'size', 'serving', 'original', 'classic']);
+
+// Flavour words. Protein per serving barely moves between flavours of the same
+// product, so these never decide a match; they only break ties.
+const FLAVOURS = new Set([
+  'chocolate', 'vanilla', 'strawberry', 'banana', 'caramel', 'mocha', 'coffee', 'cookie', 'cream',
+  'dough', 'chip', 'mint', 'berry', 'blueberry', 'raspberry', 'cherry', 'peach', 'mango', 'lemon',
+  'cinnamon', 'honey', 'salted', 'birthday', 'cake', 'fudge', 'brownie', 'milk', 'dark', 'white',
+  'plain', 'unflavored', 'unsweetened', 'sweetened', 'coconut', 'almond', 'peanut', 'butter',
+]);
 
 // FDC Branded values are per 100 g / 100 ml. Returns grams protein per label
 // serving, or null when the record can't be converted reliably.
 function proteinPerServing(food) {
   const n = (food.foodNutrients || []).find(
-    (x) => x.nutrientNumber === '203' || /^protein$/i.test(x.nutrientName || '')
+    (x) => x.nutrientNumber === '203' || x.nutrientId === 1003 || /^protein$/i.test(x.nutrientName || '')
   );
   const per100 = Number(n?.value);
   const size = Number(food.servingSize);
@@ -105,22 +122,52 @@ function proteinPerServing(food) {
   return grams >= 0 && grams <= 80 ? grams : null; // sanity bound per serving
 }
 
-// Pick a match only when the brand matches and most product words appear.
-function bestMatch(foods, brand, product) {
-  const b = words(brand).join(' ');
-  const want = words(product);
-  let best = null;
+// Score every FDC hit against what the model said. A hit qualifies only when
+//  - the brand lines up: every word of the stated brand appears in FDC's
+//    brandName/brandOwner, OR FDC's brandName appears in what the user said
+//    (so "Fairlife Core Power" matches brandName CORE POWER, owner Fair Oaks
+//    Farms), and
+//  - at least 60% of the product's non-flavour, non-brand words appear in the
+//    FDC description + brandName, and
+//  - the record converts to protein per serving.
+// Returns all candidates, best first, each with a `reason` when rejected.
+export function rankCandidates(foods, brand, product) {
+  const qBrand = words(brand).filter((w) => !FILLER.has(w));
+  const qAll = new Set([...qBrand, ...words(product)]);
+  const out = [];
   for (const f of foods || []) {
-    const owner = words(`${f.brandName || ''} ${f.brandOwner || ''}`).join(' ');
-    if (!b || !owner.includes(b)) continue;
-    const have = new Set(words(f.description));
-    const hits = want.filter((w) => have.has(w)).length;
-    const score = want.length ? hits / want.length : 0;
+    const fdcBrand = words(f.brandName).filter((w) => !FILLER.has(w));
+    const ownerWords = new Set([...fdcBrand, ...words(f.brandOwner)]);
+    const brandOk =
+      (qBrand.length > 0 && qBrand.every((w) => ownerWords.has(w))) ||
+      (fdcBrand.length > 0 && fdcBrand.every((w) => qAll.has(w)));
+
+    const brandish = new Set([...qBrand, ...fdcBrand]);
+    const prodWords = words(product).filter((w) => !FILLER.has(w) && !brandish.has(w));
+    const required = prodWords.filter((w) => !FLAVOURS.has(w));
+    const flavours = prodWords.filter((w) => FLAVOURS.has(w));
+    const have = new Set([...words(f.description), ...fdcBrand]);
+    const hits = required.filter((w) => have.has(w)).length;
+    const score = required.length ? hits / required.length : 1;
+    const flavourHits = flavours.filter((w) => have.has(w)).length;
     const perServing = proteinPerServing(f);
-    if (perServing == null || score < 0.6) continue;
-    if (!best || score > best.score) best = { food: f, score, perServing };
+
+    let reason = null;
+    if (!brandOk) reason = 'brand';
+    else if (score < 0.6) reason = 'product';
+    else if (perServing == null) reason = 'serving';
+    out.push({ food: f, score, flavourHits, perServing, reason });
   }
-  return best;
+  out.sort(
+    (x, y) =>
+      (x.reason ? 1 : 0) - (y.reason ? 1 : 0) || y.score - x.score || y.flavourHits - x.flavourHits
+  );
+  return out;
+}
+
+export function bestMatch(foods, brand, product) {
+  const top = rankCandidates(foods, brand, product)[0];
+  return top && !top.reason ? top : null;
 }
 
 async function lookupBranded(brand, product, apiKey) {
@@ -131,7 +178,7 @@ async function lookupBranded(brand, product, apiKey) {
     'https://api.nal.usda.gov/fdc/v1/foods/search' +
     `?api_key=${encodeURIComponent(apiKey)}` +
     `&query=${encodeURIComponent(query)}` +
-    '&dataType=Branded&pageSize=10';
+    '&dataType=Branded&pageSize=25';
 
   let result = null;
   let cacheable = false; // only cache real answers, never errors or timeouts

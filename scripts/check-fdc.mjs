@@ -4,7 +4,7 @@
 // Prints, for each sample item, whether a label was used and the protein per
 // serving it produced, plus the raw field names of the first FDC hit so we can
 // confirm the field names the parser relies on.
-import { applyLabelLookups } from '../api/parse-food.js';
+import { applyLabelLookups, rankCandidates } from '../api/parse-food.js';
 
 const key = process.env.FDC_API_KEY;
 if (!key) {
@@ -44,8 +44,31 @@ const items = [
   { name: 'Kirkland chicken breast', protein: 23, brand: 'Kirkland Signature', product: 'chicken breast', servings: 1 },
 ];
 const before = items.map((i) => i.protein);
+const asked = items.map((i) => ({ brand: i.brand, product: i.product }));
 await applyLabelLookups(items, key);
 console.log('\nItem | model estimate -> result | source | label serving');
 items.forEach((i, n) => {
   console.log(`${i.name} | ${before[n]}g -> ${i.protein}g | ${i.source} | ${i.label_serving || '-'}`);
 });
+
+// 3) For any item that fell back, show the top FDC candidates and why each was
+// rejected (brand / product / serving), so the matcher can be tuned.
+for (const [n, i] of items.entries()) {
+  if (i.source === 'label') continue;
+  const { brand, product } = asked[n];
+  const q = `${brand} ${product}`.toLowerCase();
+  const res = await fetch(
+    'https://api.nal.usda.gov/fdc/v1/foods/search' +
+      `?api_key=${encodeURIComponent(key)}&query=${encodeURIComponent(q)}&dataType=Branded&pageSize=25`
+  );
+  const d = await res.json();
+  console.log(`\n${i.name}: ${d.foods?.length || 0} FDC hits; top 3 candidates:`);
+  for (const c of rankCandidates(d.foods, brand, product).slice(0, 3)) {
+    const f = c.food;
+    console.log(
+      `  [${c.reason || 'ok'}] ${f.brandName || '-'} / ${f.brandOwner || '-'} | ${f.description} | ` +
+        `${f.servingSize} ${f.servingSizeUnit} | score ${c.score.toFixed(2)} | ` +
+        `${c.perServing == null ? 'no protein/serving' : c.perServing.toFixed(1) + 'g'}`
+    );
+  }
+}
